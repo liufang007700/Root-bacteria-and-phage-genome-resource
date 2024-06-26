@@ -1,5 +1,1 @@
-script for manuscript
-
-add this new line from local
-
-add this new line remotely
+This repo is used for organize script for the manuscript
