@@ -1,4 +1,6 @@
 # Root-bacteria-and-phage-genome-resource
 
 
-#### changes at local and push to remote repo
+### KEGG database construction
+1. version : KEGG Aril 1st 2021 version
+2. 
