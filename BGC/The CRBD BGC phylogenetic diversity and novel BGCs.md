@@ -31,7 +31,7 @@ cat <(awk '$4*1>=5000' all_14242_genomes_contig_length_up_partial_match_subset_u
 grep -w -F -f Iso_MAG_Pub_5kbplus_contigID_list Iso_MAG_Pub_BGC_cluster_info_updated.txt  > Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt
 ```
 
-#### d. Subset all BGC to CRBD NRgenome subset
+#### d. Subset BGC to CRBD NRgenome subset
 
 ```
 grep -w -F -f CRBD_NRgenomeID_list  Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt > CRBD_NRgenome_5Kplus_BGC_cluster_info.txt
@@ -48,10 +48,11 @@ cut -f 1-5 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt | sort | uniq > CRBD_NRgeno
 ### NOTE!!!! please be noted that within this CRBD_NRgenome_5Kplus_BGC_cluster_info_up.txt, there are three extra genomes and their BGCs, "Iso_Wt_W139-2"  "Iso_Wt_WTC65-1" "Iso_Wt_WTC65-2" 
 ```
 
-#### calculate novel BGC versus bigScape
+#### e. calculate novel BGC versus bigScape
 
 ```
 ## prepare files
+
 mkdir BGC_bigscape
 cd BGC_bigscape
 ln -s ../BGC_NRgenome/CRBD_NRgenome_5Kplus_BGC_cluster_info.txt ./                                                  
@@ -72,7 +73,43 @@ done
 ls > temp
 grep -v -w -F -f NRgenome_5kbplus_gbk/temp  <(cut -f 2 CRBD_NRgenomeID_gbk_map.txt)
 
+## run bigScape
+
+python ~/software/BIG_SCAPE/BiG-SCAPE-1.1.5/bigscape.py -l NRgenome_BGC_5kbplus -i /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/NRgenome_5kbplus_gbk -o CRBD_NRgenome_5Kplus_bigscape_out_v3 --pfam_dir /mnt/m1/liufang/software/BIG_SCAPE/BiG-SCAPE-1.1.5/ -c 96 --include_gbk_str region --include_singletons --cutoffs 1.0 --clans-off --hybrids-off --mode auto --mibig --verbose >> run_v3.log 2>&1
+
+python ~/software/BIG_SCAPE/BiG-SCAPE-1.1.5/bigscape.py -l HQ_NRgenome_BGC_5kbplus -i /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/HQ_NRgenome_5kbplus_gbk -o CRBD_HQ_NRgenome_5Kplus_bigscape_out_no_MIBIG --pfam_dir /mnt/m1/liufang/software/BIG_SCAPE/BiG-SCAPE-1.1.5/ -c 96 --include_gbk_str region --include_singletons --cutoffs 0.65 --clans-off --hybrids-off --mode auto --verbose >> run_v4.log 2>&1
 ```
+#### f. BGC BIGSCLICE
+
+```
+## Download BIG-FAM database
+
+wget https://www.bioinformatics.nl/~kauts001/ltr/bigslice/paper_data/
+
+## prepare the full input data for CRBD_HQ_NRgenome
+
+cd /mnt/m4/liufang/db/BIG_SLICE
+mkdir -p full_input_data/CRBD_HQ_NRgenome/
+cd full_input_data/CRBD_HQ_NRgenome/
+ln -s /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/CRBD_HQ_NRgenomeID_gbk_map.txt ./
+IFS=$'\n'
+
+for file in $(cat CRBD_HQ_NRgenomeID_gbk_map.txt| cut -f 1| sort | uniq); do echo $file; mkdir -p full_input_data/CRBD_HQ_NRgenome/$file; done
+for file in $(cat CRBD_HQ_NRgenomeID_gbk_map.txt); do genomeID=$(echo $file | cut -f 1); gbk=$(echo $file | cut -f 2); cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/"$genomeID"/"$gbk" full_input_data/CRBD_HQ_NRgenome/"$genomeID"; done
+
+cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_14_length_127376_cov_66.943613.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
+cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_1_length_401843_cov_69.689376.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
+cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_9_length_176810_cov_67.604567.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
+
+bigslice -i /mnt/m4/liufang/db/BIG_SLICE/full_input_data /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output --threshold 900  -t 64 --program_db_folder /mnt/m1/liufang/anaconda3/envs/bigslice/bin/bigslice-models # the output are store in the ``CRBD_HQ_NRgenome_bigslice_output`` file
+```
+
+#### g. calculate the cos distance
+
+```
+
+```
+
 
 
 
