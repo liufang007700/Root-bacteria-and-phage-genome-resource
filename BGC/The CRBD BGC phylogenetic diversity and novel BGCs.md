@@ -11,14 +11,22 @@ for i in  $(cut -f 1 all_14242_genomes_ID.txt)
 do
 sed -i "s/^/${i}\t/;s/ //g" summarise_genome_contig_length/${i}_length.txt
 done
-cat summarise_genome_contig_length/* > all_14242_genomes_contig_length.txt
+cat summarise_genome_contig_length/* > all_14242_genomes_contig_length.txt 
+```
+
+#### b. Summarize BGC from AntiSmash output
+
+```
+
 ```
 #### b. Subset BGC to contigs >=5kb
 
 ```
+Iso_MAG_Pub_BGC_cluster_info_updated.txt
 awk '$3*1>=5000' all_14242_genomes_contig_length.txt > Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt
 wc -l Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt  # 118481 BGCs
 cut -f 1 Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt  | sort | uniq | wc -l # 13392 genomes
+
 ```
 
 #### calculate novel BGC versus bigScape
