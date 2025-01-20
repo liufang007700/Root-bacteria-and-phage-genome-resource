@@ -19,14 +19,27 @@ cat summarise_genome_contig_length/* > all_14242_genomes_contig_length.txt
 ```
 
 ```
-#### b. Subset BGC to contigs >=5kb
+#### c. Subset BGC to contigs >=5kb
+```
+cat <(awk '$4*1>=5000' all_14242_genomes_contig_length_up_partial_match_subset_up.txt| cut -f 1) <(awk '$3*1>=5000' all_14242_genomes_contig_length_up_exact_word_match_subset.txt | cut -f 2) > Iso_MAG_Pub_5kbplus_contigID_list
+grep -w -F -f Iso_MAG_Pub_5kbplus_contigID_list Iso_MAG_Pub_BGC_cluster_info_updated.txt  > Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt
+```
+
+#### d. Subset all BGC to CRBD NRgenome subset
 
 ```
-Iso_MAG_Pub_BGC_cluster_info_updated.txt
-awk '$3*1>=5000' all_14242_genomes_contig_length.txt > Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt
-wc -l Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt  # 118481 BGCs
-cut -f 1 Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt  | sort | uniq | wc -l # 13392 genomes
-
+grep -w -F -f CRBD_NRgenomeID_list  Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt > CRBD_NRgenome_5Kplus_BGC_cluster_info.txt
+wc -l CRBD_NRgenomeID_list # 7531
+cut -f 1 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt| sort | uniq | wc -l # 7278 has BGC within contig length >=5K
+##### after double check, some of the genomes has BGC but their corresponding contig length is smaller than 5K
+cut -f 2 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt | sort | uniq | wc -l #55285 unique BGC together
+cut -f 1,5 /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/CRBD_NRgenome_5Kplus_bigscape_out/network_files/2023-09-06_23-15-07_auto_NRgenome_BGC_5kbplus/Network_Annotations_Full.tsv | grep -v '^BGC' > CRBD_NRgenome_5Kplus_BGC_bigscapeClass.txt # Pub_GCA_004305175.1_ASM430517v1_genomic  SIML01000028.1.region001.gbk    SIML01000028.1RhizobiumleguminosarumstrainSM86frag_SM86_22, 0   5717    RiPP    proteusin this gbk is included within the bigscape gbk input folder. however, within the network file this gbk is lost. So, I will manually add this line to the BGC_bigscapeClass file
+cat CRBD_NRgenome_5Kplus_BGC_bigscapeClass.txt <(cat <(echo "SIML01000028.1.region001" "RiPP" | sed 's, ,\t,g')) > CRBD_NRgenome_5Kplus_BGC_bigscapeClass_up.txt
+cut -f 2 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt | sort | uniq | wc -l # 55285
+wc -l CRBD_NRgenome_5Kplus_BGC_bigscapeClass_up.txt # 55285
+cut -f 1-5 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt | sort | uniq > CRBD_NRgenome_5Kplus_BGC_cluster_info_up.txt
+## -------- now update the CRBD NRgenome BigscapeClass --------
+### NOTE!!!! please be noted that within this CRBD_NRgenome_5Kplus_BGC_cluster_info_up.txt, there are three extra genomes and their BGCs, "Iso_Wt_W139-2"  "Iso_Wt_WTC65-1" "Iso_Wt_WTC65-2" 
 ```
 
 #### calculate novel BGC versus bigScape
