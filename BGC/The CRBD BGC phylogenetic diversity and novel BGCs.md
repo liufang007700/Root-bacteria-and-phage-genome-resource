@@ -690,14 +690,13 @@ write.tree(CRBD_HQ_RepGenus_tree,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome
 
 # BGC composition RepGenus Mean - phylogenetic tree
 
-```{r}
+```
 ## --- HQ RepGenus mean ----
 
 CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass<-data.frame(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa%>%select(c(NRPS,Others,`PKS-NRP_Hybrids`,PKSI,PKSother,RiPPs,Saccharides,Terpene,Genus))%>%group_by(Genus)%>%mutate_at(vars(-Genus),function(x) sum(x)/sum(x>=0))%>%unique())
 CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass_up<-inner_join(CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass,Genus_RepSpecies_map)
 row.names(CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass_up)<-CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass_up$RepSpecies_GenomeID
 CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass_up<-CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass_up[HQ_RepGenus_tree_order,]
-
 
 ## ----- Tree annot ------
 
@@ -706,8 +705,6 @@ source("/Users/fangliu/Documents/IGDB_Bai_lab/Script_backup/table2itol/table2ito
 #Apparently this script is running in interactive mode. You could now generate iTOL files by setting some 'infiles' variable to a vector of file names and then calling:create_itol_files(infiles)
 setwd("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BGC_composition_and_Tree/Tree_annot/")
 create_itol_files(infiles = "CRBD_HQ_NRgenome_BGC_RepGenus_BigScape_Class_RA.csv",identifier = "RepSpecies_GenomeID",label = "RepSpecies_GenomeID",separator = ",")
-```
-
 
 # CRBD vs MiBIG novel GCF - Novel GCF composition and PhyClass composition
 # NOTE!!! since the distance file is very large (21G and subset to 893M), I decided to have this section done on meta server instead of my local compuster
@@ -715,7 +712,6 @@ create_itol_files(infiles = "CRBD_HQ_NRgenome_BGC_RepGenus_BigScape_Class_RA.csv
 
 # GCF richness per genome, based on GCF results
 
-```{r}
 ### ----- GCF membership and novelty
 GCF_membership<-read.table("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BiGSlice/CRBD_HQ_NRgenome_BGC_GCF_membership.txt",sep="\t",header = TRUE)
 CRBD_HQ_NRgenome_vs_BigFam_novel<-read.table("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BiGSlice/R_write_CRBD_vs_BigFam_mean_cos_dist_perGCF.txt",sep = "\t",header = TRUE)
@@ -771,7 +767,6 @@ pdf("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023
 Actinobacteria_family_meanGCF/Actinobacteria_family_size
 dev.off()
 
-
 ## Alphaproteobacteria
 ## Gammaproteobacteria
 ## Bacteroidota
@@ -799,12 +794,8 @@ R_write_CRBD_HQ_NRgenome_GCF_richness_GenusMedian_taxa_up_sort<-CRBD_HQ_NRgenome
 write.table(R_write_CRBD_HQ_NRgenome_GCF_richness_GenusMedian_taxa_up_sort,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/GCF_richness/R_write_CRBD_HQ_NRgenome_GCF_Median_perGenus.txt",sep = "\t",quote = FALSE,row.names = FALSE)
 write.table(R_write_CRBD_HQ_NRgenome_GCF_richness_GenusMedian_taxa_up_sort,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BGC_composition_and_Tree/Tree_annot/R_write_CRBD_HQ_NRgenome_GCF_Median_perGenus.txt",sep = "\t",quote = FALSE,row.names = FALSE)
 
-
-```
-
 # Novel GCF per Genus (CRBD vs BigFam)
 
-```{r}
 CRBD_HQ_NRgenome_novel_GCF<-CRBD_HQ_NRgenome_BGC_GCF_vs_BigFam_cosdist_up%>%mutate(Novelty=if_else(min_cosdist_GCF_mean>0.2,"Novel","Known")) # novel GCF are defined by mean min cos distance between CRBD vs BigFam
 CRBD_HQ_NRgenome_novel_GCF_taxa<-inner_join(CRBD_HQ_NRgenome_novel_GCF,CRBD_HQ_NRgenome_taxonomy%>%select(c(NRgenome_GenomeID,PhyClass_collapse,Genus)),by=c("GenomeID"="NRgenome_GenomeID")) #48643
 CRBD_HQ_NRgenome_GCF_sum_perGenome<-data.frame(CRBD_HQ_NRgenome_novel_GCF_taxa%>%select(c(GCF,GenomeID,Genus))%>%unique()%>%group_by(GenomeID)%>%mutate(GCF_sum_perGenome=n())%>%select(GenomeID,GCF_sum_perGenome,Genus)%>%unique()) # 6087 
@@ -824,7 +815,6 @@ setwd("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_20
 create_itol_files(infiles = "R_wrire_CRBD_HQ_NRgenome_novel_GCF_vs_BiG_FAM_ratio.txt",identifier = "RepSpecies_GenomeID",label ="RepSpecies_GenomeID",separator = "\t")
 create_itol_files(infiles = "R_write_CRBD_HQ_NRgenome_RepGenus_size.txt",identifier = "RepSpecies_GenomeID",label ="RepSpecies_GenomeID",separator = "\t")
 create_itol_files(infiles = "R_write_CRBD_HQ_NRgenome_GCF_Median_perGenus.txt",identifier = "RepSpecies_GenomeID",label ="RepSpecies_GenomeID",separator = "\t",double.to.bars = TRUE)
-```
 ```
 
 
