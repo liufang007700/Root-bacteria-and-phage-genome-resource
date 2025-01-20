@@ -19,6 +19,12 @@ cat summarise_genome_contig_length/* > all_14242_genomes_contig_length.txt
 ```
 
 ```
+
+#### c. Edit BGC contigID with that of genome contigID
+```
+Please refer to the script file : 
+```
+
 #### c. Subset BGC to contigs >=5kb
 ```
 cat <(awk '$4*1>=5000' all_14242_genomes_contig_length_up_partial_match_subset_up.txt| cut -f 1) <(awk '$3*1>=5000' all_14242_genomes_contig_length_up_exact_word_match_subset.txt | cut -f 2) > Iso_MAG_Pub_5kbplus_contigID_list
