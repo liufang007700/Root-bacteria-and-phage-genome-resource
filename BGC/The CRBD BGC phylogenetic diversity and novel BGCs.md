@@ -107,8 +107,195 @@ bigslice -i /mnt/m4/liufang/db/BIG_SLICE/full_input_data /mnt/m3/liufang/NRgenom
 #### g. calculate the cos distance
 
 ```
+cd CRBD_HQ_NRgenome_bigslice_output
+mkdir calculate_cosine_dist
+### please be noted that BigFam BGC database include MiBIG2.0 (1910 BGC)
+
+python convert_bigslice_data_2_table.py --input result/data.db -e False -c True
+python extract_feature_matrix.py  ./ CRBD_HQ_NRgenome_BGC_feature_matrix
+sed -i  -E 's,^\t,bgc_id\t,g' CRBD_HQ_NRgenome_BGC_feature_matrix
+mv CRBD_HQ_NRgenome_BGC_feature_matrix  CRBD_plus_BiGfam_BGC_feature_matrix.txt
+
+## Extract CRBD BGC feature matrix
+csvtk filter -f 'dataset_id=11' /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > CRBD_bgc_id_list
+#csvtk -t grep -P CRBD_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt  > sub_CRBD_BGC_feature_matrix.txt
+csvtk -t grep -P CRBD_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt -o sub_CRBD_BGC_feature_matrix.txt -T
+
+## Extract MiBIG BGC feature matrix
+
+csvtk filter -f 'dataset_id=1' /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > MiBIG_bgc_id_list
+csvtk -t grep -P MiBIG_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt -o sub_MiBIG_BGC_feature_matrix.txt -T
+
+## Extract Other BGC feature (except CRBD) matrix
+
+csvtk filter -f 'dataset_id!=11' /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > Other_bgc_id_list
+csvtk -t grep -P Other_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt -o sub_Other_BGC_feature_matrix.txt -T
+
+## calculate GCF membership
+
+python convert_bigslice_data_2_table.py --input result/data.db -e False -c True
+python extract_feature_matrix.py  ./ CRBD_HQ_NRgenome_BGC_feature_matrix
+python clustering_bgc_from_bigslice_pool3.py sub_CRBD_BGC_feature_matrix.txt --prefix CRBD_cos_dist_based_clustering --maxBGCid 0
+cat <(cut -f 1 sub_MiBIG_BGC_feature_matrix.txt | paste -s -d '\t')   <(paste -d '\t' <(cut -f 1 sub_CRBD_BGC_feature_matrix.txt) <(cut -f 2- CRBD_vs_MiBIG_cosine_distances_matrix.txt) | tail -n +2)  > CRBD_vs_MiBIG_cosine_distances_matrix_up.txt
+
+python clustering_bgc_from_bigslice_pool3.py --input sub_CRBD_BGC_feature_matrix.txt --prefix CRB
+D_self --maxBGCid 0
+cut -f 1,2 CRBD_selfclustering.tsv | sed -E 's,\t,\tGCF_,g' | sed 's,GCF_cluster_0.2,GCF_id,g' > CRBD_HQ_NRgenome_BGC_GCF_membership.txt
+```
+
+#### h. Calculate the minimum cos distance between CRBD HQ NRgenome versus BigFam
 
 ```
+cd /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files
+CRBD_vs_BigFam_split_*.txt > /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/CRBD_vs_MiBiG_cos_dist/file_list
+for file in $(cat file_list)
+do
+	echo $file
+	ln -s /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/"$file" ./
+done
+parallel -j 100 /usr/bin/Rscript Summary_min_cos_dist.R {1}_cosine_distances_matrix.txt ./min_cos_dist/{1} ::: $(sed 's,_cosine_distances_matrix.txt,,g' file_list)
+grep -v -w -F -f file_list  <(ls /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/CRBD_vs_BigFam_split_*.txt | sed 's,/mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/,,g') > left_file_list
+for file in $(cat left_file_list)
+do
+    echo $file
+    ln -s /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/"$file" ./
+done
+parallel -j 100 /usr/bin/Rscript Summary_min_cos_dist.R {1}_cosine_distances_matrix.txt ./min_cos_dist/{1} ::: $(sed 's,_cosine_distances_matrix.txt,,g' left_file_list)
+
+ulimit -n 4096 # other wide paste command will report error like "too many files opened"
+paste -d "\t" min_cos_dist/* > combine_split_min_cos_dist.txt
+paste -d "\t" <(cut -f 1 combine_split_min_cos_dist.txt) <(cat  <(ls min_cos_dist/* | sed 's,min_cos_dist/CRBD_vs_BigFam_,,g' | sed 's,_min_cos_dist.txt,,g' | paste -d '\t' -s)  <(cut -f $(seq 2 2 $(head -2 combine_split_min_cos_dist.txt | tail -1 | awk '{print NF}') | paste -s -d ',') combine_split_min_cos_dist.txt | tail -n +2 | sed 's, ,\t,g')) | sed 's,Min_cosdist,bgc_id,g' > CRBD_vs_BigFam_min_cos_dist_combine.txt
+mkdir split_cosine_distances_matrix
+mv CRBD_vs_BigFam_split_*_cosine_distances_matrix.txt split_cosine_distances_matrix
+
+cut -d ',' -f 2,9 bgc.csv > BGC_name_vs_bgc_id_map.txt
+
+## Summary_min_cos_dist.R
+
+#!/bin/Rscript
+
+library(stringr)
+library(reshape2)
+library(dplyr)
+
+#Reading parameters
+infile <- commandArgs(trailingOnly=T)[1];
+outfile_prefix <- commandArgs(trailingOnly=T)[2];
+dist_df<-read.table(infile,sep="\t",header=TRUE,row.names=1,quote="")
+dist_df_up<-dist_df[apply(dist_df,1,sum)>0,apply(dist_df,2,sum)>0]
+min_per_row_up<-data.frame(Min_cosdist=apply(dist_df_up,1,function(x) min(x)))
+write.table(min_per_row_up,file=paste(outfile_prefix,"_min_cos_dist.txt",sep=""),sep="\t",quote=FALSE)
+```
+
+#### i. Generate the novel GCF composition and diversity
+
+```
+#!/bin/Rscript
+
+#### after individual CRBD vs BigFam split min cos dist combined into one file, now calculate the minimum distance bewteen CRBD vs BigFam
+
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(stringr)
+
+
+taxa_color<-read.csv("GTDB_phylum_color_Ray_define_top12_Sep_05_2023.csv",header = FALSE,col.names = c("PhyClass","Color"))
+rownames(taxa_color)<-taxa_color$PhyClass
+PhyClass_order<-c("Alphaproteobacteria","Gammaproteobacteria","Actinobacteriota","Firmicutes","Bacteroidota","Myxococcota","Patescibacteria","Spirochaetota","Fibrobacterota","Chloroflexota","Verrucomicrobiota","Acidobacteriota","Others")
+BGC_color<-c("#e59572","#65a9b8","#d9a7a7","#bf7e7e","#a86060","#d4cb7b","#d1a7db","#5fa171","grey")
+BGC_class<-c("NRPS","Others","PKS-NRP_Hybrids","PKSI","PKSother","RiPPs","Saccharides","Terpene","Multiple_BigScapeClasses")
+BGC_class_annot<-data.frame(Color=BGC_color,Class=BGC_class)
+
+
+## calculate the min cos distance between CRBD BGC against all MiBIG BGC
+
+dist_df<-read.table("CRBD_vs_BigFam_min_cos_dist_combine.txt",sep="\t",header=TRUE,row.names=1,quote="")
+dim(dist_df) # 48635  1226
+min_per_row_up<-data.frame(Min_cosdist=apply(dist_df,1,function(x) min(x)))
+
+## now read into the CRBD GCF member dataframe
+GCF_mem<-read.table("CRBD_HQ_NRgenome_BGC_GCF_membership.txt",header=TRUE,sep="\t")
+CRBD_GCF_mem<-GCF_mem%>%filter(bgc_id%in%row.names(min_per_row_up)) # 48635
+CRBD_GCF_mem$bgc_id<-as.character(CRBD_GCF_mem$bgc_id)
+CRBD_GCF_mem$gcf_id<-as.character(CRBD_GCF_mem$gcf_id)
+CRBD_vs_BigFam_min_cosdist_GCF_mem<-inner_join(data.frame(bgc_id=row.names(min_per_row_up),min_per_row_up),CRBD_GCF_mem%>%select(c(bgc_id,gcf_id)))
+length(unique(CRBD_vs_BigFam_min_cosdist_GCF_mem$gcf_id)) # 12865 GCF
+CRBD_vs_BigFam_min_cosdist_GCF_mean<-data.frame(CRBD_vs_BigFam_min_cosdist_GCF_mem%>%group_by(gcf_id)%>%mutate(min_cosdist_GCF_mean=mean(Min_cosdist))%>%select(gcf_id,min_cosdist_GCF_mean)%>%unique())
+summary(CRBD_vs_BigFam_min_cosdist_GCF_mean$min_cosdist_GCF_mean) # Min 1st Median Mean 3rd Max 0.01746 0.30399 0.45248 0.45536 0.60384 0.86563 
+
+## GCF BigScapeClass composition --- cutoff scheme 1
+
+range_cutoffs <- c(0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0)
+CRBD_vs_BigFam_min_cosdist_GCF_mean$range_category<-cut(CRBD_vs_BigFam_min_cosdist_GCF_mean$min_cosdist_GCF_mean,breaks = range_cutoffs, include.lowest = TRUE)
+write.table(CRBD_vs_BigFam_min_cosdist_GCF_mean,"R_write_CRBD_vs_BigFam_mean_cos_dist_perGCF.txt",sep="\t",row.names=FALSE,quote=FALSE) 
+## prepare gcf_id and BGC bigscape class mapping file
+
+bgc_id_vs_name<-read.csv("bgc.csv",header=TRUE)
+BigSlice_bgc_id_vs_name<-bgc_id_vs_name%>%select(c(id,orig_filename))%>%dplyr::rename(bgc_id=id)
+BigSlice_bgc_id_vs_name$bgc_id<-factor(BigSlice_bgc_id_vs_name$bgc_id)
+BigSlice_bgc_id_vs_name_add_gcf_id<-inner_join(BigSlice_bgc_id_vs_name,CRBD_GCF_mem%>%select(gcf_id,bgc_id))
+dim(BigSlice_bgc_id_vs_name_add_gcf_id) # 48635 since 9 of the BGC does not has cos distance data
+BigSlice_bgc_id_vs_name_add_gcf_id$BGC<-gsub(".gbk","",BigSlice_bgc_id_vs_name_add_gcf_id$orig_filename)
+CRBD_BGC_bigscape_class<-read.table("CRBD_HQ_NRgenome_BGC_bigscape_class.txt",sep="\t",header=TRUE)
+BigSlice_BGC_GCF_bigscape_class<-inner_join(BigSlice_bgc_id_vs_name_add_gcf_id,CRBD_BGC_bigscape_class)
+BigSlice_BGC_GCF_class_summary<-data.frame(BigSlice_BGC_GCF_bigscape_class%>%group_by(gcf_id,BiG.SCAPE.class)%>%mutate(BGC_SUM_perGCF_perBigScapeClass=n())%>%select(c(gcf_id,BiG.SCAPE.class,BGC_SUM_perGCF_perBigScapeClass))%>%unique())# It turned out that some of the GCF belongs to different BIG_scape classes, to solve this problem, the BigClass of the GCF would be assigned by the bigscape class habors the maximum number of BGCs
+BigSlice_BGC_GCF_BigScapeClass<-BigSlice_BGC_GCF_class_summary%>%group_by(gcf_id)%>%mutate(GCF_max_BigScapeClass=max(BGC_SUM_perGCF_perBigScapeClass))%>%filter(GCF_max_BigScapeClass==BGC_SUM_perGCF_perBigScapeClass) # 6324 rows, while unique GCF are 6276, for this reason, I decided to assign multiple_classes to GCF assigned to several different bigscape classes
+BigSlice_BGC_GCF_class_summary_up<-BigSlice_BGC_GCF_class_summary%>%group_by(gcf_id)%>%mutate(BigScapeClass_SUM_per_GCF=n())%>%mutate(BigScapeClass_up=if_else(BigScapeClass_SUM_per_GCF>1,"Multiple_BigScapeClasses",BiG.SCAPE.class))%>%select(c(gcf_id,BigScapeClass_up))%>%unique() # 12865 GCFs
+
+## now the BigScape Class for each GCF is ready too
+
+CRBD_vs_BigFam_min_cosdist_GCF_mean_BigScapeClass<-inner_join(CRBD_vs_BigFam_min_cosdist_GCF_mean,BigSlice_BGC_GCF_class_summary_up)
+CRBD_vs_BigFam_min_cosdist_GCF_mean_BigScapeClass$Value=1
+CRBD_vs_BigFam_cosdist_distribution_BigScapeClass<-data.frame(CRBD_vs_BigFam_min_cosdist_GCF_mean_BigScapeClass%>%group_by(range_category,BigScapeClass_up)%>%mutate(Sum_perRange=sum(Value))%>%select(c(range_category,BigScapeClass_up,Sum_perRange))%>%unique())
+CRBD_vs_BigFam_cosdist_distribution_BigScapeClass$BigScapeClass_up<-factor(CRBD_vs_BigFam_cosdist_distribution_BigScapeClass$BigScapeClass_up,levels=BGC_class) 
+
+pdf("BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_along_ranges.pdf",width=8,height=4)
+ggplot(CRBD_vs_BigFam_cosdist_distribution_BigScapeClass,aes(x=range_category,y=Sum_perRange,fill=BigScapeClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=BGC_color)+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
+dev.off()
+
+
+pdf("Novel_GCF_only_BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_along_ranges.pdf",width=8,height=4)
+ggplot(CRBD_vs_BigFam_cosdist_distribution_BigScapeClass%>%filter(!range_category%in%c("[0,0.05]","(0.05,0.1]","(0.1,0.15]","(0.15,0.2]")),aes(x=range_category,y=Sum_perRange,fill=BigScapeClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=BGC_color)+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
+dev.off()
+
+pdf("Except_1range_BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_along_ranges.pdf",width=8,height=4)
+ggplot(CRBD_vs_BigFam_cosdist_distribution_BigScapeClass%>%filter(!range_category%in%c("[0,0.05]")),aes(x=range_category,y=Sum_perRange,fill=BigScapeClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=BGC_color)+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
+dev.off()
+
+
+############ GCF range  scheme 1 ################
+
+## GCF taxa summary
+
+BGC_taxa<-read.table("R_write_CRBD_NRgenome_BGC_5kb_update_bigscapeClass_taxa.txt",sep="\t",header=TRUE,quote="")
+dim(BigSlice_bgc_id_vs_name_add_gcf_id)
+BigSlice_bgc_id_vs_name_add_gcf_id[1:5,]
+BigSlice_bgc_id_vs_name_add_gcf_id_taxa<-inner_join(BigSlice_bgc_id_vs_name_add_gcf_id%>%select(!BGC)%>%dplyr::rename(BGC=orig_filename),BGC_taxa%>%select(c(BGC,PhyClass_collapse)))
+GCF_PhyClass_SUM<-data.frame(BigSlice_bgc_id_vs_name_add_gcf_id_taxa%>%group_by(gcf_id,PhyClass_collapse)%>%mutate(GCF_PhyClass_SUM=n())%>%select(c(gcf_id,PhyClass_collapse,GCF_PhyClass_SUM))%>%unique())
+GCF_PhyClass<-GCF_PhyClass_SUM%>%group_by(gcf_id)%>%mutate(GCF_PhyClass_num=n())%>%select(!(GCF_PhyClass_SUM))%>%unique()%>%mutate(PhyClass_up=if_else(GCF_PhyClass_num>1,"Multiple_PhyClass",PhyClass_collapse))%>%select(!PhyClass_collapse)%>%unique() # 6276 GCFs
+
+## combine GCF taxa with mean cos dist per GCF
+range_cutoffs <- c(0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95,1.0)
+CRBD_vs_BigFam_min_cosdist_GCF_mean$range_category<-cut(CRBD_vs_BigFam_min_cosdist_GCF_mean$min_cosdist_GCF_mean,breaks = range_cutoffs, include.lowest = TRUE)
+CRBD_vs_BigFam_min_cosdist_GCF_mean_add_taxa<-inner_join(CRBD_vs_BigFam_min_cosdist_GCF_mean,GCF_PhyClass)
+CRBD_vs_BigFam_GCF_taxa_summary<-data.frame(CRBD_vs_BigFam_min_cosdist_GCF_mean_add_taxa%>%group_by(range_category,PhyClass_up)%>%mutate(PhyClassSum_perRange=n())%>%select(range_category,PhyClassSum_perRange,PhyClass_up)%>%unique())
+CRBD_vs_BigFam_GCF_taxa_summary$PhyClass_up<-factor(CRBD_vs_BigFam_GCF_taxa_summary$PhyClass_up,levels=c(PhyClass_order[-7],"Multiple_PhyClass"))
+
+pdf("BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_along_ranges_taxonomy.pdf",width=8,height=4)
+ggplot(CRBD_vs_BigFam_GCF_taxa_summary,aes(x=range_category,y=PhyClassSum_perRange,fill=PhyClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=c(taxa_color[PhyClass_order[-7],]$Color,"#5e5e5e"))+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
+dev.off()
+
+pdf("Novel_GCF_only_BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_along_ranges_taxonomy.pdf",width=8,height=4)
+ggplot(CRBD_vs_BigFam_GCF_taxa_summary%>%filter(!range_category%in%c("[0,0.05]","(0.05,0.1]","(0.1,0.15]","(0.15,0.2]")),aes(x=range_category,y=PhyClassSum_perRange,fill=PhyClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=c(taxa_color[PhyClass_order[-7],]$Color,"#5e5e5e"))+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
+dev.off()
+
+pdf("Except_1range_BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_along_ranges_taxonomy.pdf",width=8,height=4)
+ggplot(CRBD_vs_BigFam_GCF_taxa_summary%>%filter(!range_category%in%c("[0,0.05]")),aes(x=range_category,y=PhyClassSum_perRange,fill=PhyClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=c(taxa_color[PhyClass_order[-7],]$Color,"#5e5e5e"))+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
+dev.off()
+```
+
+
 
 
 
