@@ -13,7 +13,7 @@ sed -i "s/^/${i}\t/;s/ //g" summarise_genome_contig_length/${i}_length.txt
 done
 cat summarise_genome_contig_length/* > all_14242_genomes_contig_length.txt
 ```
-#### b. Calculate contig length
+#### b. Subset BGC to contigs >=5kb
 
 ```
 
