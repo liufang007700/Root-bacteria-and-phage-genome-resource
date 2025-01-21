@@ -29,12 +29,12 @@
     cat CPS_protein_sequences.fasta  KS_protein_sequences.fasta > CPS_KS_protein_seq.faa
 
 ## make diamond database
-
+    db=/mnt/m1/liufang/db
     cat All_PGPR_all_organisms_KeggGene_peptide.faa CPS_KS_protein_seq.faa  > Kegg_PGPR_plus_GA_CPS_KS.faa              
     time \
     /mnt/m2/dairui/anaconda3/envs/diamond2.0.15/bin/diamond makedb \
     --in Kegg_PGPR_plus_GA_CPS_KS.faa \
-    --db /mnt/m1/liufang/db/PGPR_DIAMOND_2023/All_Kegg_PGPR_plus_pub_CPS_KS_dmnd \
+    --db $db/PGPR_DIAMOND_2023/All_Kegg_PGPR_plus_pub_CPS_KS_dmnd \
     --threads 96 >> log/diamond_makedb.log 2>&1
     grep '^>' CPS_KS_protein_seq.faa  | cut -d ' ' -f 1 | sed 's,^>,,g' > Bacteria_CPS_KS_KO_gene_map.txt
 ```
@@ -46,9 +46,9 @@
 mkdir log
 mkdir diamond_out
 time \
-    /mnt/m2/dairui/anaconda3/envs/diamond2.0.15/bin/diamond blastp \
+    diamond blastp \
     --query CRBD_all_9772_prodigal_combine.faa \
-    --db /mnt/m1/liufang/db/PGPR_DIAMOND_2023/All_Kegg_PGPR_plus_pub_CPS_KS_dmnd.dmnd \
+    --db $db/PGPR_DIAMOND_2023/All_Kegg_PGPR_plus_pub_CPS_KS_dmnd.dmnd \
     --threads 96 \
     --out diamond_out/CRBD_all_9772_genome_vs_PGPR_Dec20_dmndblastp_annot.fm6 \
     --outfmt 6 \
@@ -179,7 +179,7 @@ time \
     other_P_enzymes_extracellular_fm6<-read.table("other_P_enzymes_extracellular_all_14242_genomes_kegg_1.0e-5_id50plus.fm6",sep="\t",header=FALSE)
     other_P_enzymes_extracellular_fm6<-other_P_enzymes_extracellular_fm6%>%select(c(V1,V2))
     colnames(other_P_enzymes_extracellular_fm6)<-c("GeneID","KeggGeneID")
-    ko_gene_map<-read.table("/mnt/m1/liufang/db/ftp_download_KEGG_04_01_2021/ko_gene_map.txt",sep="\t",header=TRUE)
+    ko_gene_map<-read.table("$db/ftp_download_KEGG_04_01_2021/ko_gene_map.txt",sep="\t",header=TRUE)
     other_P_enzymes_extracellular_fm6_addKO<-inner_join(other_P_enzymes_extracellular_fm6,ko_gene_map)
     other_P_enzymes_extracellular_fm6_addKO$GenomeID<-str_split(other_P_enzymes_extracellular_fm6_addKO$GeneID,pattern="___",simplify=TRUE,n=2)[,1]
     other_P_enzymes_extracellular_KO<-other_P_enzymes_extracellular_fm6_addKO%>%select(c(KO,GenomeID))%>%unique()%>%mutate(Count=1)
@@ -266,7 +266,7 @@ time \
     ## now, we have both ``CRBD_all_9772_genomes_PGPR_Dec20_exclude_phosphorus_SCL_evalue5_id50plus_KO_count.txt`` and  ``CRBD_9772_genomes_ALP_NSAP_phytase_esterase_extracellular_KO.txt`` ready, combine together we will analyze the PGPR distribution among CRBD
 ```
 
-## e. The multifacet PGPR potential encoded within CRBD in R
+## e. Rscript for main figure - The multifacet PGPR potential encoded within CRBD 
 
 ```
 --
