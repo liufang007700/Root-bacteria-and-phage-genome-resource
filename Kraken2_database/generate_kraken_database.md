@@ -266,3 +266,48 @@ conda activate Kraken2.11
 
 /mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --build --db $db/Kraken2_microbiome_Nov25 --threads 132 >> log/Kraken2_microbiome_build.log 2>&1
 ```
+
+### 2a, Kraken microbiome phage RepSpecies 
+
+* NOTE >> seperate Virus from the remaining since some of the virus contigs are predicted from bacteria isolate genome
+
+```
+## ------- prepare and reformat the fasta file --------
+	mkdir prep_genomes
+	cd prep_genomes
+	ln -s $wd/IRBC_viromes/viral_sequence/result_230830/bowtie/CRVC_and_IMG_SR_phage_rep_species.fna ./
+	grep '^>' CRVC_and_IMG_SR_phage_rep_species.fna | sed 's, .*$,,g' | sed 's,$,kraken:taxid|10239,g' | wc -l # 88431
+	grep '^>' CRVC_and_IMG_SR_phage_rep_species.fna | sed 's, .*$,,g' | sed 's,$,kraken:taxid|10239,g' | sort | uniq | wc -l # 88431
+	sed 's, .*,,g' CRVC_and_IMG_SR_phage_rep_species.fna | sed 's,\(^>.*\)$,\1|kraken:taxid|10239,g' > CRVC_and_IMG_SR_phage_rep_species_kraken_formated.fna
+
+## ------- add library --------
+	mkdir -p $db/Kraken2_phage_RepSpecies/library
+	mkdir -p $db/Kraken2_phage_RepSpecies/taxonomy
+	cp ~/db/Kraken2_microbiome_Nov25/taxonomy/* taxonomy/
+
+## ------- build database ------
+	mkdir -p $db/Kraken2_phage_RepSpecies/log
+	/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --add-to-library $db/Kraken2_phage_RepSpecies/prep_genomes/CRVC_and_IMG_SR_phage_rep_species_kraken_formated.fna --db $db/Kraken2_phage_RepSpecies --threads 96 >> log/Kraken2_add_Phage_RepSpecies_to_library.log 2>&1
+	cd $db/Kraken2_phage_RepSpecies/library
+	mv added Phage_RepSpecies
+	cd $db/Kraken2_phage_RepSpecies/library/Phage_RepSpecies
+	mv prelim_map* prelim_map.txt
+	/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --build --db  $db/Kraken2_phage_RepSpecies --threads 96 >> log/Kraken2_Phage_RepSpecies_build.log 2>&1
+```
+
+### 2b, Kraken microbiome exclude_virus 
+
+```
+mkdir $db/Kraken2_microbiome_exclude_virus
+cd $db/Kraken2_microbiome_exclude_virus
+cp -r $db/Kraken2_microbiome_Nov25/library ./
+cp -r $db/Kraken2_microbiome_Nov25/taxonomy ./
+cd ~/db/Kraken2_microbiome_exclude_virus/library
+/bin/rm -r CRVC IMG_VR4 viral
+cd ~/db/Kraken2_microbiome_exclude_virus/taxonomy
+/bin/rm -r prelim_map.txt
+#conda activate Kraken2.11
+mkdir -p ~/db/Kraken2_microbiome_exclude_virus/log
+/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --build --db $db/Kraken2_microbiome_exclude_virus --threads 96 >> log/Kraken2_microbiome_exclude_virus_build.log 2>&1
+```
+
