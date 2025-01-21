@@ -4,6 +4,39 @@
 
 #### a. Build diamond database
 ```
+## first build a kegg protein database including all eukaryotes, prokaryotes and virus, please be noted the kegg database we used is the April 1st 2021 version
+cd kegg/genes/fasta
+gunzip eukaryotes.pep.gz
+gunzip prokaryotes.pep.gz
+gunzip T40000.pep.gz
+cat eukaryotes.pep prokaryotes.pep T40000.pep > KEGG_eukaryotes_prokaryotes_virus_protein.faa
+
+## extract peptide that encode PGPR functions, for detailed PGPR function defination please refer to the supplenmental table
+
+### prepare all PGPR peptide sequences
+
+grep -w -F -f PGPR_KO_list ~/db/ftp_download_KEGG_04_01_2021/ko_gene_map.txt  | cut -f 1 > All_PGPR_KeggGeneID_list #153498 KeggGeneID
+seqkit grep -f All_PGPR_KeggGeneID_list  KEGG_eukaryotes_prokaryotes_virus_protein.faa > All_PGPR_all_organisms_KeggGene_peptide.faa # 
+
+### add CPS and KS protein into above (note: cause lots of bacteria are able to synthesize GA, however, kegg database did not include as much as GA synthesis related proteins, so we manually download and add into the PGPR protein reference)
+    > CPS accession ID:NP_768789, NP_106893, NP_443949, NP_659791, WP_003466962, AEQ94336, WP_020322919
+    > KS accession ID: NP_768790,NP_106894,NP_443948,NP_659792,WP_003466963,AEQ94335
+conda activate entrez_direct 
+esearch -db protein -query "$(cat KS_accession_list | tr '\n' ' ')" | efetch -format fasta > KS_protein_sequences.fasta
+esearch -db protein -query "$(cat CPS_accession_list | tr '\n' ' ')" | efetch -format fasta > CPS_protein_sequences.fasta
+
+### Add CPS and KS as prefix in the header line for both faa file and then combine together to construct diamond db
+cat CPS_protein_sequences.fasta  KS_protein_sequences.fasta > CPS_KS_protein_seq.faa
+
+## make diamond database
+
+mkdir log
+time \
+diamond makedb \
+--in All_PGPR_all_organisms_KeggGene_peptide.faa \
+--db /mnt/m1/liufang/db/PGPR_DIAMOND/PGPR_dmnd \
+--threads 64 \
+>> log/diamond_makedb.log 2>&1
 
 ```
 #### b. Conduct blast
