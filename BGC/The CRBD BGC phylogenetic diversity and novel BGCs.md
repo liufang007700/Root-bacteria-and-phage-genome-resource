@@ -17,23 +17,24 @@ cat summarise_genome_contig_length/* > all_14242_genomes_contig_length.txt
 #### b. Summarize BGC from AntiSmash output
 
 ```
+$proj=/mnt/m2/dairui/project/binning
 ## combine BGC results
-cd /mnt/m2/dairui/project/binning/MAG_finalization/all
+cd $proj/MAG_finalization/all
 mkdir -p 14_BGC/sep_genome
-cd /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome
-ln -s /mnt/m2/dairui/project/binning/isolate/08_BGCs/Arabidopsis/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/isolate/08_BGCs/Maize/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/isolate/08_BGCs/Medicago/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/isolate/08_BGCs/Rice/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/isolate/08_BGCs/Wheat/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/MAG_finalization/*/08_BGCs/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/MAG_finalization/Rc_HNmini/*/08_BGCs/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/published_genomes/Pub_3556_antismash/sep_genome/* ./
-ln -s /mnt/m2/dairui/project/binning/published_genomes/IMG_root_genomes_0330/08_antismash/sep_genome/* ./
-cd /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/
+cd $proj/MAG_finalization/all/14_BGC/sep_genome
+ln -s $proj/isolate/08_BGCs/Arabidopsis/sep_genome/* ./
+ln -s $proj/isolate/08_BGCs/Maize/sep_genome/* ./
+ln -s $proj/isolate/08_BGCs/Medicago/sep_genome/* ./
+ln -s $proj/isolate/08_BGCs/Rice/sep_genome/* ./
+ln -s $proj/isolate/08_BGCs/Wheat/sep_genome/* ./
+ln -s $proj/MAG_finalization/*/08_BGCs/sep_genome/* ./
+ln -s $proj/MAG_finalization/Rc_HNmini/*/08_BGCs/sep_genome/* ./
+ln -s $proj/published_genomes/Pub_3556_antismash/sep_genome/* ./
+ln -s $proj/published_genomes/IMG_root_genomes_0330/08_antismash/sep_genome/* ./
+cd $proj/MAG_finalization/all/14_BGC/
 ls sep_genome > all_14242_genomes_ID
 
-DIR=/mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome
+DIR=$proj/MAG_finalization/all/14_BGC/sep_genome
 cd $DIR/..
 
 for i in `cat $DIR/../all_14242_genomes_ID`; do
@@ -63,12 +64,13 @@ grep -w -F -f Iso_MAG_Pub_5kbplus_contigID_list Iso_MAG_Pub_BGC_cluster_info_upd
 #### d. Subset BGC to CRBD NRgenome subset
 
 ```
+wd=/mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA
 grep -w -F -f CRBD_NRgenomeID_list  Iso_MAG_Pub_BGC_cluster_5Kplus_info_updated.txt > CRBD_NRgenome_5Kplus_BGC_cluster_info.txt
 wc -l CRBD_NRgenomeID_list # 7531
 cut -f 1 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt| sort | uniq | wc -l # 7278 has BGC within contig length >=5K
 ##### after double check, some of the genomes has BGC but their corresponding contig length is smaller than 5K
 cut -f 2 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt | sort | uniq | wc -l #55285 unique BGC together
-cut -f 1,5 /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/CRBD_NRgenome_5Kplus_bigscape_out/network_files/2023-09-06_23-15-07_auto_NRgenome_BGC_5kbplus/Network_Annotations_Full.tsv | grep -v '^BGC' > CRBD_NRgenome_5Kplus_BGC_bigscapeClass.txt # Pub_GCA_004305175.1_ASM430517v1_genomic  SIML01000028.1.region001.gbk    SIML01000028.1RhizobiumleguminosarumstrainSM86frag_SM86_22, 0   5717    RiPP    proteusin this gbk is included within the bigscape gbk input folder. however, within the network file this gbk is lost. So, I will manually add this line to the BGC_bigscapeClass file
+cut -f 1,5 $wd/CRBD_BGC/BGC_bigscape/CRBD_NRgenome_5Kplus_bigscape_out/network_files/2023-09-06_23-15-07_auto_NRgenome_BGC_5kbplus/Network_Annotations_Full.tsv | grep -v '^BGC' > CRBD_NRgenome_5Kplus_BGC_bigscapeClass.txt # Pub_GCA_004305175.1_ASM430517v1_genomic  SIML01000028.1.region001.gbk    SIML01000028.1RhizobiumleguminosarumstrainSM86frag_SM86_22, 0   5717    RiPP    proteusin this gbk is included within the bigscape gbk input folder. however, within the network file this gbk is lost. So, I will manually add this line to the BGC_bigscapeClass file
 cat CRBD_NRgenome_5Kplus_BGC_bigscapeClass.txt <(cat <(echo "SIML01000028.1.region001" "RiPP" | sed 's, ,\t,g')) > CRBD_NRgenome_5Kplus_BGC_bigscapeClass_up.txt
 cut -f 2 CRBD_NRgenome_5Kplus_BGC_cluster_info.txt | sort | uniq | wc -l # 55285
 wc -l CRBD_NRgenome_5Kplus_BGC_bigscapeClass_up.txt # 55285
@@ -96,7 +98,7 @@ do
     echo $file
     genomeID=$(echo $file |cut -f 1)
     gbk=$(echo $file | cut -f 2)
-    cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/"$genomeID"/"$gbk" ./
+    cp $proj/MAG_finalization/all/14_BGC/sep_genome/"$genomeID"/"$gbk" ./
 done
 
 ls > temp
@@ -104,9 +106,9 @@ grep -v -w -F -f NRgenome_5kbplus_gbk/temp  <(cut -f 2 CRBD_NRgenomeID_gbk_map.t
 
 ## run bigScape
 
-python ~/software/BIG_SCAPE/BiG-SCAPE-1.1.5/bigscape.py -l NRgenome_BGC_5kbplus -i /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/NRgenome_5kbplus_gbk -o CRBD_NRgenome_5Kplus_bigscape_out_v3 --pfam_dir /mnt/m1/liufang/software/BIG_SCAPE/BiG-SCAPE-1.1.5/ -c 96 --include_gbk_str region --include_singletons --cutoffs 1.0 --clans-off --hybrids-off --mode auto --mibig --verbose >> run_v3.log 2>&1
+python ~/software/BIG_SCAPE/BiG-SCAPE-1.1.5/bigscape.py -l NRgenome_BGC_5kbplus -i $wd/CRBD_BGC/BGC_bigscape/NRgenome_5kbplus_gbk -o CRBD_NRgenome_5Kplus_bigscape_out_v3 --pfam_dir /mnt/m1/liufang/software/BIG_SCAPE/BiG-SCAPE-1.1.5/ -c 96 --include_gbk_str region --include_singletons --cutoffs 1.0 --clans-off --hybrids-off --mode auto --mibig --verbose >> run_v3.log 2>&1
 
-python ~/software/BIG_SCAPE/BiG-SCAPE-1.1.5/bigscape.py -l HQ_NRgenome_BGC_5kbplus -i /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/HQ_NRgenome_5kbplus_gbk -o CRBD_HQ_NRgenome_5Kplus_bigscape_out_no_MIBIG --pfam_dir /mnt/m1/liufang/software/BIG_SCAPE/BiG-SCAPE-1.1.5/ -c 96 --include_gbk_str region --include_singletons --cutoffs 0.65 --clans-off --hybrids-off --mode auto --verbose >> run_v4.log 2>&1
+python ~/software/BIG_SCAPE/BiG-SCAPE-1.1.5/bigscape.py -l HQ_NRgenome_BGC_5kbplus -i $wd/CRBD_BGC/BGC_bigscape/HQ_NRgenome_5kbplus_gbk -o CRBD_HQ_NRgenome_5Kplus_bigscape_out_no_MIBIG --pfam_dir /mnt/m1/liufang/software/BIG_SCAPE/BiG-SCAPE-1.1.5/ -c 96 --include_gbk_str region --include_singletons --cutoffs 0.65 --clans-off --hybrids-off --mode auto --verbose >> run_v4.log 2>&1
 ```
 #### f. BGC BIGSCLICE
 
@@ -120,17 +122,17 @@ wget https://www.bioinformatics.nl/~kauts001/ltr/bigslice/paper_data/
 cd /mnt/m4/liufang/db/BIG_SLICE
 mkdir -p full_input_data/CRBD_HQ_NRgenome/
 cd full_input_data/CRBD_HQ_NRgenome/
-ln -s /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_bigscape/CRBD_HQ_NRgenomeID_gbk_map.txt ./
+ln -s $wd/CRBD_BGC/BGC_bigscape/CRBD_HQ_NRgenomeID_gbk_map.txt ./
 IFS=$'\n'
 
 for file in $(cat CRBD_HQ_NRgenomeID_gbk_map.txt| cut -f 1| sort | uniq); do echo $file; mkdir -p full_input_data/CRBD_HQ_NRgenome/$file; done
-for file in $(cat CRBD_HQ_NRgenomeID_gbk_map.txt); do genomeID=$(echo $file | cut -f 1); gbk=$(echo $file | cut -f 2); cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/"$genomeID"/"$gbk" full_input_data/CRBD_HQ_NRgenome/"$genomeID"; done
+for file in $(cat CRBD_HQ_NRgenomeID_gbk_map.txt); do genomeID=$(echo $file | cut -f 1); gbk=$(echo $file | cut -f 2); cp $proj/MAG_finalization/all/14_BGC/sep_genome/"$genomeID"/"$gbk" full_input_data/CRBD_HQ_NRgenome/"$genomeID"; done
 
-cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_14_length_127376_cov_66.943613.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
-cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_1_length_401843_cov_69.689376.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
-cp /mnt/m2/dairui/project/binning/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_9_length_176810_cov_67.604567.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
+cp $proj/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_14_length_127376_cov_66.943613.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
+cp $proj/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_1_length_401843_cov_69.689376.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
+cp $proj/MAG_finalization/all/14_BGC/sep_genome/Iso_Wt_WTC89-2/Iso_Wt_WTC89-2___NODE_9_length_176810_cov_67.604567.region001.gbk full_input_data/CRBD_HQ_NRgenome/Iso_Wt_WTC89_2/
 
-bigslice -i /mnt/m4/liufang/db/BIG_SLICE/full_input_data /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output --threshold 900  -t 64 --program_db_folder /mnt/m1/liufang/anaconda3/envs/bigslice/bin/bigslice-models # the output are store in the ``CRBD_HQ_NRgenome_bigslice_output`` file
+bigslice -i /mnt/m4/liufang/db/BIG_SLICE/full_input_data $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output --threshold 900  -t 64 --program_db_folder /mnt/m1/liufang/anaconda3/envs/bigslice/bin/bigslice-models # the output are store in the ``CRBD_HQ_NRgenome_bigslice_output`` file
 ```
 
 #### g. calculate the cos distance
@@ -146,18 +148,18 @@ sed -i  -E 's,^\t,bgc_id\t,g' CRBD_HQ_NRgenome_BGC_feature_matrix
 mv CRBD_HQ_NRgenome_BGC_feature_matrix  CRBD_plus_BiGfam_BGC_feature_matrix.txt
 
 ## Extract CRBD BGC feature matrix
-csvtk filter -f 'dataset_id=11' /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > CRBD_bgc_id_list
+csvtk filter -f 'dataset_id=11' $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > CRBD_bgc_id_list
 #csvtk -t grep -P CRBD_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt  > sub_CRBD_BGC_feature_matrix.txt
 csvtk -t grep -P CRBD_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt -o sub_CRBD_BGC_feature_matrix.txt -T
 
 ## Extract MiBIG BGC feature matrix
 
-csvtk filter -f 'dataset_id=1' /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > MiBIG_bgc_id_list
+csvtk filter -f 'dataset_id=1' $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > MiBIG_bgc_id_list
 csvtk -t grep -P MiBIG_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt -o sub_MiBIG_BGC_feature_matrix.txt -T
 
 ## Extract Other BGC feature (except CRBD) matrix
 
-csvtk filter -f 'dataset_id!=11' /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > Other_bgc_id_list
+csvtk filter -f 'dataset_id!=11' $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/result/Saved_Dataframes_data/bgc.csv | csvtk cut -f id | grep -v 'id' > Other_bgc_id_list
 csvtk -t grep -P Other_bgc_id_list -f 1 CRBD_plus_BiGfam_BGC_feature_matrix.txt -o sub_Other_BGC_feature_matrix.txt -T
 
 ## calculate GCF membership
@@ -175,19 +177,19 @@ cut -f 1,2 CRBD_selfclustering.tsv | sed -E 's,\t,\tGCF_,g' | sed 's,GCF_cluster
 #### h. Calculate the minimum cos distance between CRBD HQ NRgenome versus BigFam
 
 ```
-cd /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files
-CRBD_vs_BigFam_split_*.txt > /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/CRBD_vs_MiBiG_cos_dist/file_list
+cd $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files
+CRBD_vs_BigFam_split_*.txt > $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/CRBD_vs_MiBiG_cos_dist/file_list
 for file in $(cat file_list)
 do
 	echo $file
-	ln -s /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/"$file" ./
+	ln -s $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/"$file" ./
 done
 parallel -j 100 /usr/bin/Rscript Summary_min_cos_dist.R {1}_cosine_distances_matrix.txt ./min_cos_dist/{1} ::: $(sed 's,_cosine_distances_matrix.txt,,g' file_list)
-grep -v -w -F -f file_list  <(ls /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/CRBD_vs_BigFam_split_*.txt | sed 's,/mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/,,g') > left_file_list
+grep -v -w -F -f file_list  <(ls $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/CRBD_vs_BigFam_split_*.txt | sed 's,$wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/,,g') > left_file_list
 for file in $(cat left_file_list)
 do
     echo $file
-    ln -s /mnt/m3/liufang/NRgenome_CRBC_NCBI_IMG_ENA/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/"$file" ./
+    ln -s $wd/CRBD_BGC/BGC_BiG_SliCE/CRBD_HQ_NRgenome_bigslice_output/calculate_cosine_dist/Other_BGC_split_1000_files/"$file" ./
 done
 parallel -j 100 /usr/bin/Rscript Summary_min_cos_dist.R {1}_cosine_distances_matrix.txt ./min_cos_dist/{1} ::: $(sed 's,_cosine_distances_matrix.txt,,g' left_file_list)
 
@@ -216,7 +218,7 @@ min_per_row_up<-data.frame(Min_cosdist=apply(dist_df_up,1,function(x) min(x)))
 write.table(min_per_row_up,file=paste(outfile_prefix,"_min_cos_dist.txt",sep=""),sep="\t",quote=FALSE)
 ```
 
-#### i. Generate the novel GCF composition and diversity
+## Rscript for main figure - Generate the novel GCF composition and diversity 
 
 ```
 #!/bin/Rscript
@@ -323,7 +325,7 @@ pdf("Except_1range_BigSlice_GCF_CRBD_HQ_NRgenome_GCF_vs_BigFam_cosine_distance_a
 ggplot(CRBD_vs_BigFam_GCF_taxa_summary%>%filter(!range_category%in%c("[0,0.05]")),aes(x=range_category,y=PhyClassSum_perRange,fill=PhyClass_up))+geom_bar(stat = "identity",size=0.5,color="#f0f2f2",width = 0.8)+scale_fill_manual(values=c(taxa_color[PhyClass_order[-7],]$Color,"#5e5e5e"))+theme_bw()+theme(axis.title.x = element_blank(),axis.text.x=element_text(angle=90),axis.line = element_line(colour = "black"),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank(),panel.background = element_blank())+labs(y="GCF number",x="Distance cutoff")
 dev.off()
 ```
-#### BGC composition along the CRBD phylogenetic tree visualized at genus level
+## Rscript for main figure  - BGC composition along the CRBD phylogenetic tree visualized at genus level
 
 ```
 ---
@@ -334,13 +336,8 @@ editor_options:
   chunk_output_type: console
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 # load envs and setup main_theme
 
-```{r}
 library(stringr)
 library(reshape2)
 library(dplyr)
@@ -369,11 +366,9 @@ rownames(taxa_color)<-taxa_color$PhyClass
 BGC_color<-c("#e59572","#65a9b8","#d9a7a7","#bf7e7e","#a86060","#d4cb7b","#d1a7db","#5fa171","grey")
 BGC_class<-c("NRPS","Others","PKS-NRP_Hybrids","PKSI","PKSother","RiPPs","Saccharides","Terpene","Multiple_BigScapeClasses")
 BGC_class_annot<-data.frame(Color=BGC_color,Class=BGC_class)
-```
 
 # Subset CRBD HQ NRgenome taxonomy
 
-```{r}
 CRBD_genome_meta<-read.table("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/Meta/9772_CRBD_genomes_metadata_0918.txt",sep="\t",header=TRUE,quote = "") #9772
 summary(CRBD_genome_meta$GenomeID=="Pub_GCA_000468095.1_Pantoea_sp._AS-PWVM4_genomic") # TRUE=1
 colnames(CRBD_genome_meta)<-gsub(pattern = "[.]",replacement = "_",colnames(CRBD_genome_meta))
@@ -445,11 +440,9 @@ dev.off()
 
 PhyClass_col<-list(Color=taxa_color[c(1:12,15),]$Color)
 names(PhyClass_col$Color)<-taxa_color[c(1:12,15),]$PhyClass
-```
 
 # BGC basic stats 
 
-```{r}
 ### ------- BGC_5Kbplus_per_NRgenome ------
 
 ### ------- BGC infor 
@@ -614,11 +607,9 @@ pdf("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023
 plotD<-ggplot(CRBD_NRgenome_BGC_5kb_NovelSum_BGC_Freq_taxa,aes(x=PhyClass_collapse,y=NovelRatio))+geom_boxplot(fill="#81b5b8",color='#377c80',outlier.alpha = 0.1,size=0.3)+scale_fill_manual(values = c("#edaa32","#68967e"))+main_theme+theme(axis.text.x = element_blank())+labs(x="PhyClass",y="Novelty")
 plotA/plotD/plotC
 dev.off()
-```
 
 # BGC composition - stacked barplot
 
-```{r}
 CRBD_HQ_NRgenome_BGC_5kb_update_Class_up2<-CRBD_HQ_NRgenome_BGC_5kb_update_Class_up%>%select(c(GenomeID,BGC,BigScape_Class,Novelty))
 CRBD_NRgenome_BGC_5kb_update_bigscapeClass_taxa<-inner_join(CRBD_HQ_NRgenome_BGC_5kb_update_Class_up2,CRBD_HQ_NRgenome_taxonomy%>%select(c(NRgenome_GenomeID,PhyClass_collapse))%>%dplyr::rename(GenomeID=NRgenome_GenomeID))
 CRBD_NRgenome_BGC_5kb_update_bigscapeClass_taxa_Rwrite<-inner_join(CRBD_HQ_NRgenome_BGC_5kb_update_Class_up2,CRBD_HQ_NRgenome_taxonomy%>%select(c(NRgenome_GenomeID,PhyClass_collapse,Class,Order,Family,Genus))%>%dplyr::rename(GenomeID=NRgenome_GenomeID))
@@ -632,36 +623,8 @@ pdf("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023
 ggplot(CRBD_NRgenome_BGCSum_perBigscapeClass_RA,aes(x=PhyClass_collapse,y=BigscapeClass_RA,fill=BigScape_Class))+geom_bar(stat='identity',colour="NA",size=0.1)+labs(x="PhyClass",y="Relative Abundance \n")+scale_fill_manual(values=BGC_color)+guides(fill=guide_legend(ncol=1))+main_theme+theme(legend.text = element_text(size=6,face = 'plain'),legend.title = element_text(size=8,face = 'plain'),legend.position = "right",axis.title.x= element_blank(),axis.title.y= element_text(size=8),axis.text.y = element_text(face = 'plain',size=6),axis.text.x = element_text(face = 'plain',size=8),strip.text = element_text(size=8,colour = "white"),strip.background = element_rect(fill="#557982", colour="grey"))
 dev.off()
 
-# ----- BGC composition PCoA, move to meta server ------
-
-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome<-data.frame(CRBD_HQ_NRgenome_BGC_5kb_update_Class_up2%>%select(c(GenomeID,BGC,BigScape_Class))%>%group_by(GenomeID,BigScape_Class)%>%mutate(BigScape_Class_per_Genome=n()))%>%select(c(GenomeID,BigScape_Class,BigScape_Class_per_Genome))%>%unique()
-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide<-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome%>%spread(key = BigScape_Class,value = BigScape_Class_per_Genome)
-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide_add_BGCSum_perGenome<-inner_join(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide,CRBD_HQ_NRgenome_5bk_BGC_Freq_perGenome)
-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide_add_BGCSum_perGenome[is.na(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide_add_BGCSum_perGenome)]=0
-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide_add_BGCSum_perGenome<-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide_add_BGCSum_perGenome%>%mutate_at(vars(-c(GenomeID,BGC_Freq_perGenome)), funs(./BGC_Freq_perGenome))
-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa<-inner_join(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_perGenome_wide_add_BGCSum_perGenome,CRBD_HQ_NRgenome_taxonomy,by=c("GenomeID"="NRgenome_GenomeID"))
-row.names(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa)<-CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa$GenomeID
-write.table(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BGC_composition_and_Tree/Rwrite_CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa.txt",quote = FALSE,row.names = FALSE,sep = "\t")
-# 
-# library(phyloseq)
-# library(ggplot2)
-# CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_phyloseq<-otu_table(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa%>%select(c(NRPS,Others,`PKS-NRP_Hybrids`,PKSI,PKSother,RiPPs,Saccharides,Terpene)),taxa_are_rows = FALSE)
-# CRBD_HQ_NRgenome_meta_phyloseq<-sample_data(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa%>%select(c(PhyClass_collapse,Class,Order,Family,Genus,Species)))
-# CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_meta_phyloseq<-merge_phyloseq(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_phyloseq,CRBD_HQ_NRgenome_meta_phyloseq)
-# 
-# CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_bray<-vegdist(otu_table(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_meta_phyloseq),method="bray",binary = FALSE)
-# PCoA<-ordinate(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_meta_phyloseq,method = "PCoA",CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_bray)
-# 
-# pdf("/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BGC_composition_and_Tree/CRBD_HQ_NRgenome_BigScapeClass_composition_PCoA.pdf",width = 8,height = 6)
-# plot<-plot_ordination(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_composition_meta_phyloseq,PCoA,type="samples",shape="PhyClass",color="Incubation_time")+labs(title="PCoA bacteria OTU RA",x=paste("\n PCoA.1 [",round(otu_bacteria_rmnoise_RA_PCoA$values$Relative_eig[1]*100,2),"]",sep = ""),y=paste("PCoA.1 [",round(otu_bacteria_rmnoise_RA_PCoA$values$Relative_eig[2]*100,2),"] \n",sep = ""))+geom_point(size=3)+scale_shape_manual(values = c(19,15,17))+scale_color_manual(values =c("#918d03FF","#d95e11FF","#00AF66FF","#03709eFF","#ba86a2FF","#919494FF"))+main_theme
-# plot$layers<-plot$layers[-1]
-# plot
-# dev.off()
-```
-
 # generate the mapping between Genus and RepSpecies Genome
 
-```{r}
 ## extract the best RepSpecies as the representative genome for each Genus
 
 CRBD_HQ_RepSpecies_sub<-data.frame(CRBD_HQ_RepSpecies%>%select(RepSpecies_GenomeID,Genus_gtdb,Score)%>%group_by(Genus_gtdb)%>%mutate(MaxScore=max(Score))%>%filter(Score==MaxScore))  #442 genus with g__ unclassified
@@ -686,11 +649,9 @@ length((fortify(CRBD_HQ_RepGenus_tree)%>%filter(isTip=="TRUE")%>%arrange(y))$lab
 HQ_RepGenus_tree_order<-as.character((fortify(CRBD_HQ_RepGenus_tree)%>%filter(isTip=="TRUE")%>%arrange(y))$label) # 441
 write.tree(CRBD_HQ_RepGenus_tree,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/PhyloTree/CRBD_HQ_441_RepGenus_RepSpecies_unrooted.tree")
 write.tree(CRBD_HQ_RepGenus_tree,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgenome/NRgenome_finalize_06_12_2023/BGC/Nov_6_HQ_NRgenome/BGC_composition_and_Tree/Tree_annot/CRBD_HQ_441_RepGenus_RepSpecies_unrooted.tree")
-```
 
 # BGC composition RepGenus Mean - phylogenetic tree
 
-```
 ## --- HQ RepGenus mean ----
 
 CRBD_HQ_RepGenus_BGC_5kb_BigScapeClass<-data.frame(CRBD_HQ_NRgenome_BGC_5kb_BigScapeClass_add_taxa%>%select(c(NRPS,Others,`PKS-NRP_Hybrids`,PKSI,PKSother,RiPPs,Saccharides,Terpene,Genus))%>%group_by(Genus)%>%mutate_at(vars(-Genus),function(x) sum(x)/sum(x>=0))%>%unique())
@@ -816,9 +777,4 @@ create_itol_files(infiles = "R_wrire_CRBD_HQ_NRgenome_novel_GCF_vs_BiG_FAM_ratio
 create_itol_files(infiles = "R_write_CRBD_HQ_NRgenome_RepGenus_size.txt",identifier = "RepSpecies_GenomeID",label ="RepSpecies_GenomeID",separator = "\t")
 create_itol_files(infiles = "R_write_CRBD_HQ_NRgenome_GCF_Median_perGenus.txt",identifier = "RepSpecies_GenomeID",label ="RepSpecies_GenomeID",separator = "\t",double.to.bars = TRUE)
 ```
-
-
-
-
-
 
