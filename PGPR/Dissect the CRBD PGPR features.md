@@ -365,7 +365,6 @@ HQ_NRgenome_taxonomy_up_sort$PhyClass_collapse<-factor(HQ_NRgenome_taxonomy_up_s
 
 PhyClass_col<-list(Color=taxa_color[c(1:12,15),]$Color)
 names(PhyClass_col$Color)<-taxa_color[c(1:12,15),]$PhyClass
-```
 
 # CRBD HQ NRgenome KOs
 
@@ -1336,7 +1335,6 @@ write.csv(CRBD_HQ_RepGenus_taxonomy,"/Users/fangliu/Documents/IGDB_Bai_lab/NRgen
 create_itol_files(infiles = "CRBD_HQ_NRgenome_PGPR_percentage_per_Genus.csv",identifier = "RepSpecies_GenomeID",label = "RepSpecies_GenomeID",separator = ",")
 create_itol_files(infiles = "CRBD_HQ_RepGenus_CRBC_and_Published_present_or_absent.csv",identifier = "RepSpecies_GenomeID",label = "RepSpecies_GenomeID",separator = ",")
 create_itol_files(infiles = "CRBD_HQ_RepGenus_taxonomy.csv",identifier = "RepSpecies_GenomeID",label = "RepSpecies_GenomeID",separator = ",")
-```
 
 # All PGPR 9 categories - HQ_NRgenome PGPR prevalence
 
