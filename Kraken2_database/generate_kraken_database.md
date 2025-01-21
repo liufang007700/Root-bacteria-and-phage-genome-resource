@@ -13,7 +13,7 @@
 
 
 ## download Kraken2 default taxonomy
-  DBNAME=$db/Kraken2_ncbi_taxdump_Nov23/Kraken_default
+  DBNAME=$db/Kraken2_microbiome_Nov25
   kraken2-build --download-taxonomy --db $DBNAME
 
 ## download Kraken default microbiome libraries
@@ -27,7 +27,7 @@
 ## Build kraken2 default microbiome database
 
   mkdir log
-  /mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --build --db $db/Kraken2_ncbi_taxdump_Nov23/Kraken_default --threads 96 >> log/Kraken2_default_build.log 2>&1
+  /mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --build --db $db/$db/Kraken2_microbiome_Nov25 --threads 96 >> log/Kraken2_default_build.log 2>&1
 ```
 #### b. format GTDB genome fasta to match with that of Kraken2 requirement
 
@@ -170,10 +170,9 @@
 	grep -w -F -f GTDB_35135_lowContam_NRgenomeID_list Kraken_default_RefSeq_archaea_genomeID > Kraken_default_RefSeq_archaea_genomeID_coverred_by_GTDB_lowContam_RepGenome_list 
 	grep -v -w -F -f Kraken_default_RefSeq_bacteria_and_archaea_genomeID GTDB_35135_lowContam_NRgenomeID_list > GTDB_lowContam_not_coverred_by_Kraken2_default_GenomeID_list
 	grep -v -w -F -f Kraken_default_RefSeq_bacteria_and_archaea_genomeID GTDB_35135_lowContam_NRgenomeID_list > GTDB_lowContam_not_coverred_by_Kraken2_default_GenomeID_list
-```
+
 ## Format fasta and build library
 
-```
 ## subset GTDB LowContam genome
 
 	ln -s $db/Kraken2_gtdb_taxdump_Nov22/prep_genomes/GTDB/GTDB_35135_lowContam_NRgenomeID_list ./
@@ -192,7 +191,7 @@
 	cd $db/Kraken2_microbiome_Nov25/library
 	mv added GTDB_not_cover_by_kraken_default
 ```
-##  add IRVC to Kraken default microbiome database
+#### d. add IRVC to Kraken default microbiome database
 
 ```
 ## prepare genome and format curation
@@ -207,31 +206,59 @@ cd $db/Kraken2_microbiome_Nov25/library
 mv added CRVC
 ```
 
-## add FungiDB genome reference into Kraken microbiome
+#### e. add FungiDB genome reference into Kraken microbiome
 
 ```
 ## prepare genome
+	> NOTE: in total 393 fungi genome form FungiDB were download and formated, for detailed script please refer to ``https://github.com/liufang007700/Root-bacteria-and-phage-genome-resource/blob/main/Kraken2_database/FungiDB_genome_wget.sh``
 
+	ls *.fasta | sed 's,.fasta,,g' > genomeID_list
+	for file in $(cat genomeID_list); do echo $file; seqkit replace -p .+ -r "$file"___Contig{nr}\|kraken:taxid\|4751 --nr-width 7 "$file".fasta > /$db/FungiDB/genomes/combine/"$file"_up.fasta  ; done
 
 ## build the library and add to Kraken microbiome
-cd $db/Kraken2_microbiome_Nov25
-/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --add-to-library $db/FungiDB/genomes/combine/All_Fungi_genome.fasta --db  $db/Kraken2_Feb11_2023 --threads 96 >> log/Kraken2_add_fungi_library.log 2>&1                                                                                                           
-mv added/ FungiDB
+	cd $db/Kraken2_microbiome_Nov25
+	/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --add-to-library $db/FungiDB/genomes/combine/All_Fungi_genome.fasta --db  $db/Kraken2_microbiome_Nov25 --threads 96 >> log/Kraken2_add_fungi_library.log 2>&1                                      
+	mv added/ FungiDB
 ```
 
-## add ENSEMBLE protist gneome reference to Kraken microbiome
+#### f. add ENSEMBLE protist gneome reference to Kraken microbiome
 
 ```
 ## prepare genome and fomat the fasta file
+	> NOTE: the compressed genome fasta were download from ``http://ftp.ensemblgenomes.org``, detailed script please refer to ``https://github.com/liufang007700/Root-bacteria-and-phage-genome-resource/blob/main/Kraken2_database/EnSEMBL_protist_wget.sh``
+	ls *.dna_rm.toplevel.fa | sed 's,.dna_rm.toplevel.fa,,g'  > genomeID_list
+	mv genomeID_list genomeID_taxname_taxid # manually added taxnomy information
+	sed 's,    ,\t,g' genomeID_taxname_taxid  | sed 's,   ,\t,g' | sed 's,  ,\t,g' | sed 's, ,\t,g' | cut -f 1,2,3 > genomeID_taxname_taxid_up.txt
+	IFS=$'\n'
+	for file in $(cat genomeID_taxname_taxid_up.txt); do echo $file; GenomeID=$(echo $file| cut -f 1); taxid=$(echo $file | cut -f 3); sed "s,^>.*,>"$GenomeID"|kraken:taxid|"$taxid"_____Contig,g" "$GenomeID".dna_rm.toplevel.fa > formated_genomes/"$GenomeID"_header_up.fasta; done
+	
+	#cd formated_genomes
+	#for file in *.fasta; do echo $file; sed -i 's, Contig,###Contig,g' $file; done
+	
+	cd formated_genomes
+	for file in *.fasta
+	do
+		echo $file
+		prefix=$(echo $file | sed 's,.fasta,,g')
+		seqkit rename -n -w 0 "$file" | sed 's,_____, ,g'  > uniq_header_fasta/"$prefix"_uniq_header.fasta
+	done
+	
+	for file in *.fasta
+	do
+		echo $file
+		sed -i 's,###Contig, Contig,g' $file
+	done
+	cd uniq_header_fasta
+	/bin/rm All_EnSEMBL_protist_genome.fasta
+	cat *.fasta > All_EnSEMBL_protist_genome.fasta
 
 ## build the library
-cd $db/Kraken2_Feb11_2023
-/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --add-to-library $db/EnSEMBL_protist/formated_genomes/uniq_header_fasta/All_EnSEMBL_protist_genome.fasta --db  $db/Kraken2_Feb11_2023 --threads 64 >> log/Kraken2_add_protist_library.log 2>&1
+	cd $db/Kraken2_microbiome_Nov25
+	/mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --add-to-library $db/EnSEMBL_protist/formated_genomes/uniq_header_fasta/All_EnSEMBL_protist_genome.fasta --db  $db/Kraken2_microbiome_Nov25 --threads 64 >> log/Kraken2_add_protist_library.log 2>&1
 
 ```
 
-
-## build Kraken2 defaul library
+#### g. Now, all the library are ready for build the Kraken2 index
 
 ```
 conda activate Kraken2.11
@@ -239,31 +266,3 @@ conda activate Kraken2.11
 
 /mnt/m1/liufang/anaconda3/envs/Kraken2.11/bin/kraken2-build --build --db $db/Kraken2_microbiome_Nov25 --threads 132 >> log/Kraken2_microbiome_build.log 2>&1
 ```
-### 1. Kraken2 default database - classification improvement by CRBD
-```
-#TOC
-#1. Kraken2 default Sep27_2022
-$db/Kraken2_ncbi_taxdump_Nov23/Kraken_default
-#2. Kraken2 default + PubCrop
-$db/Kraken2_ncbi_taxdump_Nov23/Kraken_default_plus_PubCrop
-#3. Kraken2 defalut + PubCrop + CRBC
-$db/Kraken2_ncbi_taxdump_Nov23/Kraken_default_plus_PubCrop_CRBC
-#4. GTDB_PubCrop R207 lowContam MQ
-$db/Kraken2_gtdb_taxdump_Nov22/GTDB_default
-#5. GTDB_PubCrop R207 + PubCrop
-$db/Kraken2_gtdb_taxdump_Nov22/GTDB_plus_PubCrop
-#6. GTDB_PubCrop R207 + PubCrop + CRBC
-$db/Kraken2_gtdb_taxdump_Nov22/GTDB_plus_PubCrop_CRBC_RefSeq
-
-
-
-$db/Kraken2_phage_RepSpecies
-$db/Kraken2_microbiome_exclude_virus
-$db/Kraken2_microbiome_Nov25
-```
-
-### 2. Kraken2 + CRBD + Fungi + virus
-
-### 3. Kraken2 + CRBD + Fungi + virus + GTDB
-
-### 4. Kraken2 + GTDB only
